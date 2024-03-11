@@ -1,0 +1,174 @@
+---
+title: "Asude Milestone Report - Coursera"
+author: "Asude Berber"
+date: "3/10/2024 mm/dd/yyyy"
+output: html_document
+---
+
+## Download the data and open them: 
+
+Data are already provided. The dataset contains 3 sources of text: blogs, news and tweets in four languages including English, Finnish, German and Russian. For this project the English texts have been selected to be analyzed.
+
+```{r setup, include=FALSE}
+setwd("/Users/asudeberber/Documents/Coursera § Mycourses/DataScienceSpecializationJohnHopkins/Final Capstone Project/final/en_US")
+```
+
+
+
+```{r}
+blogs <- readLines("/Users/asudeberber/Documents/Coursera § Mycourses/DataScienceSpecializationJohnHopkins/Final Capstone Project/final/en_US/en_US.blogs.txt", skipNul = TRUE, warn = FALSE)
+news <- readLines("/Users/asudeberber/Documents/Coursera § Mycourses/DataScienceSpecializationJohnHopkins/Final Capstone Project/final/en_US/en_US.news.txt", skipNul = TRUE, warn = FALSE)
+twitter <- readLines("/Users/asudeberber/Documents/Coursera § Mycourses/DataScienceSpecializationJohnHopkins/Final Capstone Project/final/en_US/en_US.twitter.txt", skipNul = TRUE, warn=FALSE)
+
+```
+
+## Introduction
+
+This project has been done for Coursera JHU Data Science Specialization Capstone Final Project Report. In this task, called milestone report, aim is to develop word predictor tool, which based on commonly used phrases in a collection of texts will predict the next word. The outputs of this project will be presented as exploratory data analysis (bi-gram, tri-gram). Later, the project aims to develop shiny application. 
+
+## Summary of the data
+Summary statistics of the three English texts is presented in Table.
+data are so big so it is enough just to readLines function
+
+```{r read_data}
+library(readr)
+library(readxl)
+library(ggplot2)
+library(NLP)
+library(tm)
+
+library(RWeka)
+require(devtools)
+install.packages("tm")
+
+
+
+
+
+```
+
+
+#Data information
+Data are huge. Therefore we need to do data sampling 
+
+
+``` {r file_size}
+set.seed(100)
+sample_size = 1000
+
+sample_blog <- blogs[sample(1:length(blogs),sample_size)]
+sample_news <- news[sample(1:length(news),sample_size)]
+sample_twitter <- twitter[sample(1:length(twitter),sample_size)]
+```
+
+```{r}
+head(sample_blog)
+head(sample_twitter)
+head(sample_news)
+
+```
+
+```{r}
+sample_data<-rbind(sample_blog,sample_news,sample_twitter)
+rm(blogs,news,twitter)
+```
+
+## Clean the data
+
+```{r}
+mycorpus <- VCorpus(VectorSource(sample_data))
+mycorpus <- tm_map(mycorpus, content_transformer(tolower)) # convert to lowercase
+mycorpus <- tm_map(mycorpus, removePunctuation) # remove punctuation
+mycorpus <- tm_map(mycorpus, removeNumbers) # remove numbers
+mycorpus <- tm_map(mycorpus, stripWhitespace) # remove multiple whitespace
+changetospace <- content_transformer(function(x, pattern) gsub(pattern, " ", x))
+mycorpus <- tm_map(mycorpus, changetospace, "/|@|\\|")
+
+install.packages("VCorpus")
+```
+
+
+#As we can see here, data frame size for blog: 200 megabyte, for news: 196 megabyte, for twitter: 159 megabyte
+
+#how many lines there are in English dataset, calculate
+```{r data_frame_line_count}
+blog_entries_line_count<-length(blogs)
+news_entries_line_count<-length(news)
+twitter_feeds_line_count<-length(twitter)
+
+data_set_length <- c(blog_entries_line_count,news_entries_line_count, twitter_feeds_line_count)
+eng_data_frame_line_count <- data.frame(data_set_length)
+names(eng_data_frame_line_count)[1] <-"Line Count"
+row.names(eng_data_frame_line_count) <- c("Blog entries", "News entries", "Twitter Feeds")
+eng_data_frame_line_count
+```
+#As you can see in the table...
+
+#How many words there are in this...!$!..dataset :))
+```{r word_count}
+library(ngram)
+blog_entries_word_count <- wordcount(blogs)
+news_entries_word_count <- wordcount(news)
+twitter_feeds_word_count <- wordcount(twitter)
+
+data_set_word_count <- c(blog_entries_word_count, news_entries_word_count, twitter_feeds_word_count)
+eng_data_frame_word_count <- data.frame(data_set_word_count)
+names(eng_data_frame_word_count)[1] <-"Word Count"
+row.names(eng_data_frame_word_count) <- c("Blog entries", "News entries", "Twitter Feeds")
+eng_data_frame_word_count
+```
+#As we can see in the table...
+
+```{r}
+summary(blogs)
+#Length     Class      Mode 
+   #899288 character character 
+head(blogs, 2)
+
+summary(news)
+head(news, 2)
+
+summary(twitter)
+head(twitter, 2)
+```
+#for exploratory part and making plots
+#I need to reduce the data by processing
+#I got help from web/github, how I need to reduce the data. In the file, lines will be cut to the 1/100
+
+```{r sample_size}
+sample_size <- 0.01
+blogs_index <- sample(seq_len(blog_entries_line_count),blog_entries_line_count*sample_size)
+news_index <- sample(seq_len(length(news)),length(news)*sample_size)
+twitter_index <- sample(seq_len(length(twitter)),length(twitter)*sample_size)
+
+blogs_sub <- blogs[blogs_index[]]
+news_sub <- news[news_index[]]
+twitter_sub <- twitter
+
+```
+
+
+#I could not make a plot properly. Data is too big. I am not able to process it still.
+
+
+```{r histogram}
+library(ggplot2)
+mostFrequent30 <-as.data.frame(blogs_sub[1:30])
+mostFrequent30 <-data.frame(Words = row.names(mostFrequent30),mostFrequent30)
+names(mostFrequent30)[2] = "Frequency"
+row.names(mostFrequent30) <-NULL
+mf30Plot = ggplot(data=mostFrequent30, aes(x=Words, y=Frequency, fill=Frequency)) + geom_bar(stat="identity") +  guides(fill=FALSE) + theme(axis.text.x=element_text(angle=90))
+# mf30Plot +labs(title="30 Most Frequently Used Words")
+mf30Plot + ggtitle("30 Most Frequently Used Words") + theme(plot.title = element_text(hjust = 0.5))
+
+
+mostFrequent30 <-as.data.frame(news_sub[1:30])
+mostFrequent30 <-data.frame(Words = row.names(mostFrequent30),mostFrequent30)
+names(mostFrequent30)[2] = "Frequency"
+row.names(mostFrequent30) <-NULL
+mf30Plot = ggplot(data=mostFrequent30, aes(x=Words, y=Frequency, fill=Frequency)) + geom_bar(stat="identity") +  guides(fill=FALSE) + theme(axis.text.x=element_text(angle=90)) #mf30Plot +labs(title="30 Most Frequently Used Words")
+mf30Plot + ggtitle("30 Most Frequently Used Words") + theme(plot.title = element_text(hjust = 0.5))
+
+
+mostFrequent30 <-as.data.frame(twitter_sub[1:30])
+mostFrequent30 <-data.frame(Words = row.names(mostFrequent30),mostFre
